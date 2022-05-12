@@ -42,7 +42,7 @@ call plug#begin()
   Plug 'scrooloose/syntastic' " syntax checking
   Plug 'LunarVim/onedarker.nvim'
 
-  " cmp and lsp plugins
+  " cmp plugins
   Plug 'hrsh7th/nvim-cmp', {'branch': 'main'}
   Plug 'hrsh7th/cmp-nvim-lsp', {'branch': 'main'}
   Plug 'hrsh7th/cmp-buffer', {'branch': 'main'}
@@ -50,6 +50,11 @@ call plug#begin()
   Plug 'hrsh7th/cmp-cmdline', {'branch': 'main'}
   Plug 'saadparwaiz1/cmp_luasnip'
 
+  " snippets
+  Plug 'L3MON4D3/LuaSnip'
+  Plug 'rafamadriz/friendly-snippets'
+
+  " lsp plugins
   Plug 'neovim/nvim-lspconfig'
   Plug 'williamboman/nvim-lsp-installer', {'branch': 'main'}
 call plug#end()
@@ -88,7 +93,6 @@ set relativenumber " Make easy to navigate
 set wildmode=list:longest,list:full " enable list of completion
 set wildignore+=*/tmp/*,*.so,*.swp,*.zip,*.cache " skip tmp files
 set list listchars=tab:»·,trail:·,nbsp:· " Display extra whitespace
-set spellfile=$HOME/.vim-spell.utf-8.add " Set spellfile to location that is guaranteed to exist
 set complete+=kspell " Autocomplete with dictionary words when spell check is on
 set splitbelow " Open new split panes to right and bottom,
 set splitright " which feels more natural
@@ -119,6 +123,7 @@ let mapleader = " "
 "Clear current search highlight by double tapping //
 nmap <silent> // :nohlsearch<CR>
 
+imap jj <Esc>
 " Create window splits easier. 
 nnoremap <silent> vv <C-w>v
 nnoremap <silent> ss <C-w>s
@@ -157,38 +162,68 @@ map <Leader>ct :!ctags -R .<CR>
 
 " ------------------------------ LSP  --------------------------- 
 :lua require('lspconfig').pyright.setup{}
-:lua require('lspconfig').solargraph.setup{}
 
 set completeopt=menu,menuone
 
 lua <<EOF
   -- Setup nvim-cmp.
-  local cmp = require'cmp'
+   local cmp_status_ok, cmp = pcall(require, "cmp")
+   if not cmp_status_ok then
+     return
+   end
+
+   local snip_status_ok, luasnip = pcall(require, "luasnip")
+   if not snip_status_ok then
+     return
+   end
+
+  require("luasnip/loaders/from_vscode").lazy_load()
+
+   local check_backspace = function()
+     local col = vim.fn.col "." - 1
+     return col == 0 or vim.fn.getline("."):sub(col, col):match "%s"
+   end
 
   cmp.setup({
     snippet = {
-      -- REQUIRED - you must specify a snippet engine
       expand = function(args)
-        vim.fn["vsnip#anonymous"](args.body) -- For `vsnip` users.
-        -- require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
-        -- require('snippy').expand_snippet(args.body) -- For `snippy` users.
-        -- vim.fn["UltiSnips#Anon"](args.body) -- For `ultisnips` users.
+        luasnip.lsp_expand(args.body) 
       end,
     },
     mapping = {
-      ['<TAB>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-    },
+      ['<C-k>'] = cmp.mapping.select_prev_item(),
+      ['<C-j>'] = cmp.mapping.select_next_item(),
+      ['<C-Space>'] = cmp.mapping(cmp.mapping.complete(), {"i", "c"}),
+      ['<C-e>'] = cmp.mapping {
+        i = cmp.mapping.abort(),
+        c = cmp.mapping.close(),
+       },
+      ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+      ['<Tab>'] = cmp.mapping(function(fallback)
+        if cmp.visible() then
+          cmp.select_next_item()
+        elseif luasnip.expandable() then
+          luasnip.expand()
+        elseif luasnip.expand_or_jumpable() then
+          luasnip.expand_or_jump()
+        elseif check_backspace() then
+          fallback()
+        else
+          fallback()
+        end
+        end, {
+          "i",
+          "s"
+        })
+      },
     sources = cmp.config.sources({
       { name = 'nvim_lsp' },
-      { name = 'vsnip' }, -- For vsnip users.
-      -- { name = 'luasnip' }, -- For luasnip users.
-      -- { name = 'ultisnips' }, -- For ultisnips users.
-      -- { name = 'snippy' }, -- For snippy users.
+      { name = 'luasnip' },
     }, {
       { name = 'buffer' },
     })
   })
-  
+
   -- Set configuration for specific filetype.
   cmp.setup.filetype('gitcommit', {
     sources = cmp.config.sources({
@@ -201,7 +236,8 @@ lua <<EOF
   -- Use buffer source for `/` (if you enabled `native_menu`, this won't work anymore).
   cmp.setup.cmdline('/', {
     sources = {
-      { name = 'buffer' }
+      { name = 'buffer' },
+      { name = 'path' }
     }
   })
 
@@ -282,4 +318,4 @@ highlight NvimTreeFolderIcon guibg=bluer
 
 :lua require('nvim-tree').setup{}
 nnoremap <leader>f <cmd>lua require('telescope.builtin').find_files()<cr>
-nnoremap <leader>g <cmd>lua require('telescope.builtin').live_grep()<cr>
+noremap <leader>g <cmd>lua require('telescope.builtin').live_grep()<cr>
