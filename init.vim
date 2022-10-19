@@ -1,3 +1,6 @@
+if exists('g:vscode')
+  source $HOME/.config/nvim/vscode/settings.vim
+else
 " ------------------------------ Plugins (VimPlug) --------------------------- 
 call plug#begin()
   " menus and finder
@@ -12,6 +15,9 @@ call plug#begin()
   Plug 'keith/rspec.vim'
   Plug 'vim-ruby/vim-ruby'
   Plug 'vim-scripts/tComment'
+
+  " elixir plugins
+  Plug 'elixir-editors/vim-elixir'
 
   " tmux integration
   Plug 'tmux-plugins/vim-tmux'
@@ -41,6 +47,7 @@ call plug#begin()
   Plug 'vim-airline/vim-airline-themes' 
   Plug 'scrooloose/syntastic' " syntax checking
   Plug 'LunarVim/onedarker.nvim'
+  Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 
   " cmp plugins
   Plug 'hrsh7th/nvim-cmp', {'branch': 'main'}
@@ -65,7 +72,7 @@ set nobackup
 set nowritebackup
 set noswapfile    " http://robots.thoughtbot.com/post/18739402579/global-gitignore#comment-458413287
 set history=1000  " a lot of history
-set ruler         " show the cursor position all the time
+"set ruler         " show the cursor position all the time
 set hlsearch
 set showcmd       " display incomplete commands
 set incsearch     " do incremental searching
@@ -85,8 +92,8 @@ set tabstop=2 " Softtabs, 2 spaces
 set shiftwidth=2
 set shiftround
 set expandtab
-set textwidth=80 " Make it obvious where 80 characters is
-set colorcolumn=+1
+"set textwidth=80 " Make it obvious where 80 characters is
+"set colorcolumn=+1
 set number " Numbers
 set numberwidth=5
 set relativenumber " Make easy to navigate
@@ -97,9 +104,10 @@ set complete+=kspell " Autocomplete with dictionary words when spell check is on
 set splitbelow " Open new split panes to right and bottom,
 set splitright " which feels more natural
 set spelllang=en_us,pt_br " we're trying to be bilingual
-set mmp=5000
-colorscheme onedark
 
+" https://cyfyifanchen.com/neovim-true-color/
+colorscheme onedark
+set termguicolors
 
 " == AG and Fuzzy Finder extra configs
 if executable('ag')
@@ -117,7 +125,6 @@ if executable('ag')
 endif
 " Default to filename searches
 let g:ctrlp_by_filename = 1
-
 " ------------------------------ Key Mappings --------------------------- 
 let mapleader = " "
 "Clear current search highlight by double tapping //
@@ -143,19 +150,6 @@ nnoremap <Leader>= :wincmd =<cr>
 " vim reload
 nmap <silent> <Leader>vr :so ~/.config/nvim/init.vim<CR>
 
-" ==== NERD tree
-  function! CloseNerdTree()
-    if g:NERDTree.IsOpen()
-      NERDTreeClose
-    else
-      NERDTreeFind
-    endif
-  endfunction
-
-" Open the project tree and expose current file in the nerdtree with Ctrl-\
-command! LocalCloseNerdTree call CloseNerdTree()
-nnoremap <silent> <C-\> :LocalCloseNerdTree<cr>
-
 " Index ctags from any project, including those outside Rails
 map <Leader>ct :!ctags -R .<CR>
 
@@ -179,6 +173,9 @@ lua <<EOF
 
   require("luasnip/loaders/from_vscode").lazy_load()
 
+  luasnip.filetype_extend("javascript", { "html" })
+  luasnip.filetype_extend("html", { "javascript" })
+
    local check_backspace = function()
      local col = vim.fn.col "." - 1
      return col == 0 or vim.fn.getline("."):sub(col, col):match "%s"
@@ -198,7 +195,7 @@ lua <<EOF
         i = cmp.mapping.abort(),
         c = cmp.mapping.close(),
        },
-      ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+      ['<CR>'] = cmp.mapping.confirm({ select = false }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
       ['<Tab>'] = cmp.mapping(function(fallback)
         if cmp.visible() then
           cmp.select_next_item()
@@ -257,9 +254,9 @@ lua <<EOF
   }
 EOF
 
-let g:nvim_tree_indent_markers = 0 
+let g:nvim_tree_indent_markers = 1 
 let g:nvim_tree_git_hl = 1 "0 by default, will enable file highlight for git attributes (can be used without the icons).
-let g:nvim_tree_highlight_opened_files = 1 "0 by default, will enable folder and file icon highlight for opened files/directories.
+let g:nvim_tree_highlight_opened_files = 0 "0 by default, will enable folder and file icon highlight for opened files/directories.
 let g:nvim_tree_root_folder_modifier = ':~' "This is the default. See :help filename-modifiers for more options
 let g:nvim_tree_add_trailing = 0 "0 by default, append a trailing slash to folder names
 let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree
@@ -311,11 +308,11 @@ nnoremap <leader>e :NvimTreeToggle<CR>
 nnoremap <leader>r :NvimTreeRefresh<CR>
 " NvimTreeOpen, NvimTreeClose, NvimTreeFocus, NvimTreeFindFileToggle, and NvimTreeResize are also available if you need them
 
-set termguicolors " this variable must be enabled for colors to be applied properly
-
 " a list of groups can be found at `:help nvim_tree_highlight`
 highlight NvimTreeFolderIcon guibg=bluer
 
 :lua require('nvim-tree').setup{}
 nnoremap <leader>f <cmd>lua require('telescope.builtin').find_files()<cr>
-noremap <leader>g <cmd>lua require('telescope.builtin').live_grep()<cr>
+  noremap <leader>g <cmd>lua require('telescope.builtin').live_grep()<cr>
+
+endif
