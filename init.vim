@@ -9,15 +9,13 @@ call plug#begin()
   Plug 'kyazdani42/nvim-tree.lua'
   Plug 'nvim-lua/plenary.nvim'
   Plug 'nvim-telescope/telescope.nvim'
+  Plug 'akinsho/bufferline.nvim', { 'tag': 'v3.*' }
 
   " ruby/rails plugins
   Plug 'thoughtbot/vim-rspec'
   Plug 'keith/rspec.vim'
   Plug 'vim-ruby/vim-ruby'
   Plug 'vim-scripts/tComment'
-
-  " elixir plugins
-  Plug 'elixir-editors/vim-elixir'
 
   " tmux integration
   Plug 'tmux-plugins/vim-tmux'
@@ -48,6 +46,7 @@ call plug#begin()
   Plug 'scrooloose/syntastic' " syntax checking
   Plug 'LunarVim/onedarker.nvim'
   Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+  Plug 'Mofiqul/dracula.nvim'
 
   " cmp plugins
   Plug 'hrsh7th/nvim-cmp', {'branch': 'main'}
@@ -104,10 +103,11 @@ set complete+=kspell " Autocomplete with dictionary words when spell check is on
 set splitbelow " Open new split panes to right and bottom,
 set splitright " which feels more natural
 set spelllang=en_us,pt_br " we're trying to be bilingual
+set cursorline " linha do cursor para dar um pump
 
 " https://cyfyifanchen.com/neovim-true-color/
-colorscheme onedark
 set termguicolors
+colorscheme onedark
 
 " == AG and Fuzzy Finder extra configs
 if executable('ag')
@@ -170,6 +170,7 @@ lua <<EOF
    if not snip_status_ok then
      return
    end
+
 
   require("luasnip/loaders/from_vscode").lazy_load()
 
@@ -247,24 +248,32 @@ lua <<EOF
     })
   })
  -- Setup lspconfig.
-  local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+ require('nvim-lsp-installer').setup {}
+ local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
   -- Replace <YOUR_LSP_SERVER> with each lsp server you've enabled.
   require('lspconfig')['solargraph'].setup {
     capabilities = capabilities
   }
+  require('lspconfig')['tsserver'].setup {
+    capabilities = capabilities
+  }
+  require('lspconfig')['elixirls'].setup {}
+  require('lspconfig')['eslint'].setup {}
+  require('lspconfig')['html'].setup {}
+  require('lspconfig')['cssls'].setup {}
 EOF
 
 let g:nvim_tree_indent_markers = 1 
-let g:nvim_tree_git_hl = 1 "0 by default, will enable file highlight for git attributes (can be used without the icons).
-let g:nvim_tree_highlight_opened_files = 0 "0 by default, will enable folder and file icon highlight for opened files/directories.
-let g:nvim_tree_root_folder_modifier = ':~' "This is the default. See :help filename-modifiers for more options
-let g:nvim_tree_add_trailing = 0 "0 by default, append a trailing slash to folder names
-let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree
-let g:nvim_tree_icon_padding = ' ' "one space by default, used for endering the space between the icon and the filename. Use with caution, it could break rendering if you set an empty string depending on your font.
-let g:nvim_tree_symlink_arrow = ' >> ' " defaults to ' ➛ '. used as a separator between symlinks' source and target.
-let g:nvim_tree_respect_buf_cwd = 1 "0 by default, will change cwd of nvim-tree to that of new buffer's when opening nvim-tree.
-let g:nvim_tree_create_in_closed_folder = 1 "0 by default, When creating files, sets the path of a file when cursor is on a closed folder to the parent folder when 0, and inside the folder when 1.
-let g:nvim_tree_special_files = { 'README.md': 1, 'Makefile': 1, 'MAKEFILE': 1 } " List of filenames that gets highlighted with NvimTreeSpecialFile
+let g:nvim_tree_git_hl = 1 " 0 by default, will enable file highlight for git attributes (can be used without the icons)."
+let g:nvim_tree_highlight_opened_files = 0 "0 by default, will enable folder and file icon highlight for opened files/directories."
+let g:nvim_tree_root_folder_modifier = ':~' "This is the default. See :help filename-modifiers for more options"
+let g:nvim_tree_add_trailing = 0 "0 by default, append a trailing slash to folder names"
+let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree"
+let g:nvim_tree_icon_padding = ' ' "one space by default, used for endering the space between the icon and the filename. Use with caution, it could break rendering if you set an empty string depending on your font."
+let g:nvim_tree_symlink_arrow = ' >> ' " defaults to ' ➛ '. used as a separator between symlinks' source and target."
+let g:nvim_tree_respect_buf_cwd = 1 "0 by default, will change cwd of nvim-tree to that of new buffer's when opening nvim-tree."
+let g:nvim_tree_create_in_closed_folder = 1 "0 by default, When creating files, sets the path of a file when cursor is on a closed folder to the parent folder when 0, and inside the folder when 1."
+let g:nvim_tree_special_files = { 'README.md': 1, 'Makefile': 1, 'MAKEFILE': 1 } " List of filenames that gets highlighted with NvimTreeSpecialFile"
 let g:nvim_tree_show_icons = {
     \ 'git': 1,
     \ 'folders': 1,
@@ -272,7 +281,7 @@ let g:nvim_tree_show_icons = {
     \ 'folder_arrows': 1,
     \ 'tree_width': 30,
     \ }
-"If 0, do not show the icons for one of 'git' 'folder' and 'files'
+"If 0, do not show the icons for one of 'git' 'folder' and 'files'"
 "1 by default, notice that if 'files' is 1, it will only display
 "if nvim-web-devicons is installed and on your runtimepath.
 "if folder is 1, you can also tell folder_arrows 1 to show small arrows next to the folder icons.
@@ -311,8 +320,31 @@ nnoremap <leader>r :NvimTreeRefresh<CR>
 " a list of groups can be found at `:help nvim_tree_highlight`
 highlight NvimTreeFolderIcon guibg=bluer
 
-:lua require('nvim-tree').setup{}
+lua <<EOF
+require('nvim-tree').setup {
+  update_cwd = true,
+  update_focused_file = {
+    enable = true,
+    update_cwd = true,
+    ignore_list = {},
+  },
+}
+require("bufferline").setup{
+options = {
+  offsets = {
+    {
+        filetype = "NvimTree",
+        text = "File Explorer",
+        highlight = "Directory",
+        separator = false -- use a "true" to enable the default, or set your own character
+    }
+    }
+  }
+}
+EOF
 nnoremap <leader>f <cmd>lua require('telescope.builtin').find_files()<cr>
-  noremap <leader>g <cmd>lua require('telescope.builtin').live_grep()<cr>
+noremap <leader>g <cmd>lua require('telescope.builtin').live_grep()<cr>
+nnoremap <silent>L :BufferLineCycleNext<CR>
+nnoremap <silent>H :BufferLineCyclePrev<CR>
 
 endif
