@@ -1,6 +1,4 @@
-if exists('g:vscode')
-  source $HOME/.config/nvim/vscode/settings.vim
-else
+
 " ------------------------------ Plugins (VimPlug) --------------------------- 
 call plug#begin()
   " menus and finder
@@ -9,7 +7,8 @@ call plug#begin()
   Plug 'kyazdani42/nvim-tree.lua'
   Plug 'nvim-lua/plenary.nvim'
   Plug 'nvim-telescope/telescope.nvim'
-  Plug 'akinsho/bufferline.nvim', { 'tag': 'v3.*' }
+  " Plug 'romgrk/barbar.nvim'
+  " Plug 'akinsho/bufferline.nvim', { 'tag': 'v3.*' }
 
   " ruby/rails plugins
   Plug 'thoughtbot/vim-rspec'
@@ -63,6 +62,9 @@ call plug#begin()
   " lsp plugins
   Plug 'neovim/nvim-lspconfig'
   Plug 'williamboman/nvim-lsp-installer', {'branch': 'main'}
+
+  "vim wiki
+  Plug 'vimwiki/vimwiki'
 call plug#end()
 
 " ------------------------------ General Settings --------------------------- 
@@ -104,10 +106,23 @@ set splitbelow " Open new split panes to right and bottom,
 set splitright " which feels more natural
 set spelllang=en_us,pt_br " we're trying to be bilingual
 set cursorline " linha do cursor para dar um pump
+set clipboard+=unnamedplus " yank para o ctrl v"
+
+" vim wiki configs
+set nocompatible
+filetype plugin on
+syntax on
 
 " https://cyfyifanchen.com/neovim-true-color/
-set termguicolors
+" set termguicolors
+
+
+let g:onedark_config = {
+    \ 'style': 'warm',
+\}
+
 colorscheme onedark
+
 
 " == AG and Fuzzy Finder extra configs
 if executable('ag')
@@ -261,6 +276,12 @@ lua <<EOF
   require('lspconfig')['eslint'].setup {}
   require('lspconfig')['html'].setup {}
   require('lspconfig')['cssls'].setup {}
+
+  require('nvim-treesitter.configs').setup {
+    highlight = {
+      enable = true
+      }
+    }
 EOF
 
 let g:nvim_tree_indent_markers = 1 
@@ -329,22 +350,21 @@ require('nvim-tree').setup {
     ignore_list = {},
   },
 }
-require("bufferline").setup{
-options = {
-  offsets = {
-    {
-        filetype = "NvimTree",
-        text = "File Explorer",
-        highlight = "Directory",
-        separator = false -- use a "true" to enable the default, or set your own character
-    }
-    }
-  }
-}
+-- require("bufferline").setup{
+-- options = {
+--   offsets = {
+--     {
+--         filetype = "NvimTree",
+--         text = "File Explorer",
+--         highlight = "Directory",
+--         separator = false -- use a "true" to enable the default, or set your own character
+--     }
+--     }
+--   }
+-- }
+-- these are all the default values
 EOF
 nnoremap <leader>f <cmd>lua require('telescope.builtin').find_files()<cr>
 noremap <leader>g <cmd>lua require('telescope.builtin').live_grep()<cr>
-nnoremap <silent>L :BufferLineCycleNext<CR>
-nnoremap <silent>H :BufferLineCyclePrev<CR>
-
-endif
+" nnoremap <silent>L :BufferLineCycleNext<CR>
+" nnoremap <silent>H :BufferLineCyclePrev<CR>
