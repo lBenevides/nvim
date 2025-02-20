@@ -9,3 +9,7 @@ sh -c 'curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.
 ```
 - Abrir o neovim e rodar `:PlugInstall`
 - Copiar configuração do tmux.conf.txt e colocar no `~/.tmux.conf`
+
+## Kanata setup
+- ir no repositorio do kanata `https://github.com/jtroo/kanata` e fazer a instalação conforme descrito, para windows é so colocar uma pasta com as config e o kanata_gui.exe que funciona
+
